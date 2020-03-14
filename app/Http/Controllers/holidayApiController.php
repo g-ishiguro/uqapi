@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Yasumi\Yasumi;
 
-class UqapiController extends Controller
+class holidayApiController extends Controller
 {
     public function index(Request $request) {
         if ($request->input('year')) {

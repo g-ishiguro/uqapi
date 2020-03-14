@@ -13,4 +13,4 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::get('/uq/getuq', 'UqapiController@index');
+Route::get('/uq/getholiday', 'holidayApiController@index');
