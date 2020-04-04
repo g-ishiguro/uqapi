@@ -105,6 +105,12 @@ return [
             'path' => storage_path('logs/api/holidayApi.log'),
             'level' => 'debug',
         ],
+
+        'holidayMstUp' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/batch/holidayMstUp.log'),
+            'level' => 'debug',
+        ],
     ],
 
 ];

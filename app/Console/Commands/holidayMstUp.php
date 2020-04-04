@@ -3,6 +3,12 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\holidayApiController;
+use Illuminate\Http\Request;
+use App\Service\DatabaseAccess\holidayMst;
+use Illuminate\Support\Facades\DB;
+
 
 class holidayMstUp extends Command
 {
@@ -12,14 +18,14 @@ class holidayMstUp extends Command
      *
      * @var string
      */
-    protected $signature = 'batch:holidayMstUpe {year?}';
+    protected $signature = 'batch:holidayMstUp {year}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'update c.target year is required';
 
     /**
      * Create a new command instance.
@@ -38,31 +44,39 @@ class holidayMstUp extends Command
      */
     public function handle()
     {
-        // 引数(yyyy)チェック
-        // なしの場合はエラー
-        if ($this->argument('year')) {
-            $targetYear = $this->argument('year');
-            var_dump($targetYear);
+        $targetYear = $this->argument('year');
+        // 引数の年が+-3年以内かチェックします
+        if ($targetYear <= date('Y', strtotime('+3 year', time())) &&
+            $targetYear >= date('Y', strtotime('-3 year', time()))) {
         } else {
-            var_dump($this->argument('year'));
-            var_dump('引数に年を設定してください。');
+            Log::channel('holidayMstUp')->warning(config('consts.errorCds.TARGET_OUT_OF_RANGE'));
+            exit;
         }
-        
 
         // apiを使用し、祝日を取得
-        // 取得した祝日をマスタに登録
-    }
-
-    public function validate() {
-        $definition = $this->definition;
-        $givenArguments = $this->arguments;
-
-        $missingArguments = array_filter(array_keys($definition->getArguments()), function ($argument) use ($definition, $givenArguments) {
-            return !\array_key_exists($argument, $givenArguments) && $definition->getArgument($argument)->isRequired();
-        });
-
-        if (\count($missingArguments) > 0) {
-            var_dump('日k数を設定してください');
+        $json = app()->call('App\Http\Controllers\holidayApiController@getHolidays', ['request' => new Request(['year' => $targetYear])]);
+        $holidays = json_decode($json);
+        // エラーコード存在確認
+        if (array_key_exists('errorCd', $holidays)) {
+            Log::channel('holidayMstUp')->warning(print_r($holidays, true));
+            exit;
         }
+
+        $holidayids = holidayMst::holidayMstWhereYear($targetYear);
+        // 指定した年の祝日が存在する場合は、削除フラグを立てる
+        if ($holidayids) {
+            holidayMst::holidayMstDeleteWhereYear($holidayids);
+            Log::channel('holidayMstUp')->info('update holiday_iddelete_fld = 1 for holidayids: ' . print_r($holidayids, true));
+        }
+        try {
+            DB::beginTransaction();
+            holidayMst::holidayMstInsertHolidays($holidays);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::channel('holidayMstUp')->warning('An error occurred when inserting a holiday_mst. errorMsg: ' . $e->getMessage());
+            exit;
+        }
+       
     }
 }

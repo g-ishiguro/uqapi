@@ -8,15 +8,10 @@ use Illuminate\Support\Facades\Log;
 
 class holidayApiController extends Controller
 {
-    public function index(Request $request) {
+    public function getHolidays(Request $request) {
         Log::channel('holidayApi')->info('start holidayApi');
         if ($request->input('year')) {
-            // 引数の年が現在の+-10年以内かチェックします。 strtodateだとバグる・・・
             $year = $request->input('year');
-            if (date('Y') + 10 < $year || date('Y') - 10 > $year) {
-                Log::channel('holidayApi')->warning(config('consts.errorCds.TARGET_OUT_OF_RANGE'));
-                return json_encode(array('errorcd' => (config('consts.errorCds.TARGET_OUT_OF_RANGE'))));
-            }
         } else {
             // 指定がない場合は今年の祝日を取得します。
             $year =  date('Y');
@@ -26,12 +21,13 @@ class holidayApiController extends Controller
         try {
             $holidays = Yasumi::create('Japan', $year, 'ja_JP');
         } catch (\Exception $e) {
-            Log::channel('holidayApi')->warning('Yasumi library error!! traget year: ' . $year . '. errorCd: ' . $e->getCode() . '.' . 'errorMessage: '. $e->getMessage() . '.' . 'trace: ' . $e->getTrace());
+            Log::channel('holidayApi')->warning('Yasumi library error!! traget year: ' . $year . '. errorCd: ' . $e->getCode() . '.' . 'errorMessage: '. $e->getMessage());
+            return json_encode(array('errorCd' => $e->getCode(), 'mesagge' => $e->getMessage()));
         }
 
         if (is_null($holidays) || empty($holidays)) {
-            Log::channel('holidayApi')->warning('Yasumi result is null or empty!!');
-            return json_encode(array('errorcd' => (config('consts.errorCds.RESPONSE_NULL'))));
+            Log::channel('holidayApi')->warning(config('consts.errorCds.RESPONSE_NULL.message'));
+            return json_encode(config('consts.errorCds.RESPONSE_NULL'));
         }
 
         $count = 0;
