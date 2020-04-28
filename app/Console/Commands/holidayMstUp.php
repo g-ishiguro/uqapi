@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\holidayApiController;
+use App\Http\Controllers\HolidayApiController;
 use Illuminate\Http\Request;
 use App\Service\DatabaseAccess\holidayMst;
 use Illuminate\Support\Facades\DB;
@@ -54,7 +54,7 @@ class holidayMstUp extends Command
         }
 
         // apiを使用し、祝日を取得
-        $json = app()->call('App\Http\Controllers\holidayApiController@getHolidays', ['request' => new Request(['year' => $targetYear])]);
+        $json = app()->call('App\Http\Controllers\HolidayApiController@getHolidays', ['request' => new Request(['year' => $targetYear])]);
         $holidays = json_decode($json);
         // エラーコード存在確認
         if (array_key_exists('errorCd', $holidays)) {

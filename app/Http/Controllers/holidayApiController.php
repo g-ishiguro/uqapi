@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Yasumi\Yasumi;
 use Illuminate\Support\Facades\Log;
 
-class holidayApiController extends Controller
+class HolidayApiController extends Controller
 {
     public function getHolidays(Request $request) {
         Log::channel('holidayApi')->info('start holidayApi');
